@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -44,6 +45,7 @@ namespace PulseAudioSystray
 			this.FormBorderStyle = FormBorderStyle.None;
 			this.ShowInTaskbar = false;
 			this.WindowState = FormWindowState.Minimized;
+			this.FormClosing += notifier_FormClosing;
 
 			//Set the systray
 			notify.Visible = true;
@@ -56,6 +58,7 @@ namespace PulseAudioSystray
 
 			//run pulseaudio
 			pulse = Process.Start(pulse_exe);
+			ChildProcessTracker.AddProcess(pulse);
 		}
 
 		void notifier_load(object sender, EventArgs e)
@@ -65,9 +68,19 @@ namespace PulseAudioSystray
 
 		void quit_form(object sender, EventArgs e)
 		{
+			this.Close();
+		}
+
+		private void notifier_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			bool confirmation = MessageBox.Show("Are you sure you want to close PulseAudio ?", "Confirmation", MessageBoxButtons.YesNo) == DialogResult.Yes;
+			if (!confirmation)
+            {
+				e.Cancel = true;
+				return;
+            }
 			if (pulse != null && !pulse.HasExited)
 				pulse.Kill();
-			this.Close();
 		}
 
 		protected override void Dispose(bool disposing)
